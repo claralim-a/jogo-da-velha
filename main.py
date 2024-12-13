@@ -1,8 +1,26 @@
+# cd C:\Users\User\OneDrive\Documentos\Pessoal\DataScience\AsimovAcademy\PythonStarter\JogoDaVelha
+# py main.py
+
 import random
 
+# Classe JogoDaVelha
 class JogoDaVelha:
+    '''
+
+    A classe JogoDaVelha comporta os componentes do jogo:
+    - __init__;
+    - exibir_tabuleiro;
+    - determinar_aleatoriedade;
+    - resetar_jogo;
+    - verificar_vencedor;
+    - verificar_empate;
+    - atualizar_pontuacao;
+    - exibir_pontuacao.
+
+    '''
+
     def __init__(self, fator_aleatoriedade=0.2):
-        self.tabuleiro = [["-", "-", "-"], ["-", "-", "-"], ["-", "-", "-"]]
+        self.tabuleiro = [[" ", " ", " "], [" ", " ", " "], [" ", " ", " "]]
         self.jogadas_disponiveis = [(i, j) for i in range(3) for j in range(3)]
         self.fator_aleatoriedade = fator_aleatoriedade      
         self.pontos_jogador = 0
@@ -31,7 +49,7 @@ class JogoDaVelha:
             return 0
         
     def resetar_jogo(self):
-        self.tabuleiro = [["-", "-", "-"] for _ in range(3)]
+        self.tabuleiro = [[" ", " ", " "] for _ in range(3)]
         self.jogadas_disponiveis = [(i, j) for i in range(3) for j in range(3)]
 
     def verificar_vencedor(self, simbolo):
@@ -64,6 +82,15 @@ class JogoDaVelha:
 
 # Classe do jogador
 class Usuario:
+    '''
+    
+    A classe Usuario comporta os componentes do Usuario:
+    
+    - __init__;
+    - escolher_simbolo;
+    - realizar_jogada.
+
+    '''
     def __init__(self):
         self.simbolo = ""
 
@@ -89,6 +116,14 @@ class Usuario:
 
 
 class Computador:
+    '''
+    
+    A classe Computador comporta os componentes do Computador:
+
+    - __init__;
+    - realizar_jogada;
+    
+    '''
     def __init__(self, simbolo, jogo):
         self.simbolo = simbolo
         self.jogo = jogo  # Referência à instância de JogoDaVelha
@@ -103,26 +138,33 @@ class Computador:
             linha, coluna = jogada
             tabuleiro[linha][coluna] = self.simbolo  # Simula a jogada do computador
             if self.jogo.verificar_vencedor(self.simbolo):  # Verifica vitória
-                tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+                tabuleiro[linha][coluna] = " "  # Desfaz a simulação
                 return jogada
-            tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+            tabuleiro[linha][coluna] = " "  # Desfaz a simulação
 
         # Tenta bloquear o jogador
         for jogada in jogadas_disponiveis:
             linha, coluna = jogada
             tabuleiro[linha][coluna] = simbolo_oponente  # Simula a jogada do oponente
             if self.jogo.verificar_vencedor(simbolo_oponente):  # Verifica se jogador pode vencer
-                tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+                tabuleiro[linha][coluna] = " "  # Desfaz a simulação
                 return jogada
-            tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+            tabuleiro[linha][coluna] = " "  # Desfaz a simulação
 
+        # Caso nenhuma jogada de vitória ou impedir derrota seja encontrada, joga na diagonal ou meio
+        diagonais = [(0,0), (0,2), (1,1), (2,0), (2,2)]
+        jogadas_diagonal_disponiveis = [jogada for jogada in jogadas_disponiveis if jogada in diagonais]
+
+        if jogadas_diagonal_disponiveis:
+            return random.choice(jogadas_diagonal_disponiveis)
+        
         # Caso nenhuma jogada estratégica seja encontrada, escolhe aleatoriamente
         return random.choice(jogadas_disponiveis)
 
 
 # Função principal
 def main():
-    jogo = JogoDaVelha(fator_aleatoriedade=0.1)
+    jogo = JogoDaVelha()
     jogador = Usuario()
     jogador_simbolo = jogador.escolher_simbolo()
     computador = Computador("O" if jogador_simbolo == "X" else "X", jogo)  # Passa a instância
@@ -173,7 +215,11 @@ def main():
 
         jogo.exibir_pontuacao()
         jogar_novamente = input("Deseja jogar novamente? (s/n): ").lower()
-        if jogar_novamente != "s":
+        while jogar_novamente not in ["s", "n"]:
+            print("Escolha inválida. Tente novamente.")
+            jogar_novamente = input("Deseja jogar novamente? (s/n): ").lower()
+
+        if jogar_novamente == "n":
             print("Obrigado por jogar!")
             break
 
