@@ -1,346 +1,181 @@
 import random
-import os
 
-# Pontuacao inicial
-global pontuacao_jogador, pontuacao_computador
-pontuacao_jogador = 0
-pontuacao_computador = 0
+class JogoDaVelha:
+    def __init__(self, fator_aleatoriedade=0.2):
+        self.tabuleiro = [["-", "-", "-"], ["-", "-", "-"], ["-", "-", "-"]]
+        self.jogadas_disponiveis = [(i, j) for i in range(3) for j in range(3)]
+        self.fator_aleatoriedade = fator_aleatoriedade      
+        self.pontos_jogador = 0
+        self.pontos_computador = 0
 
+    def exibir_tabuleiro(self):
+        print("   0   1   2")
+        for i, linha in enumerate(self.tabuleiro):
+            print(f"{i}  {' | '.join(linha)}")
+            if i < 2:
+                print("  ---+---+---")
 
-# Redefine as variáveis
-def JogarNovamente():
-    matriz = [
-        ['-', '-', '-'],
-        ['-', '-', '-'],
-        ['-', '-', '-']
-    ]
-    valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-    
-    return matriz, valores_disponiveis
+    def determinar_aleatoriedade(self):
+        dificuldade = input('Selecione o nível de dificuldade: 1 - Fácil | 2 - Médio | 3 - Difícil')
         
-# =============================================
-def ComputerAlgorithm(jogador, computador):
-    
-    # 1. Para ganhar =====================================================
-    # Se o computador tiver dois valores em uma linha
-    for i in range(3):
-        qtd_computador = matriz[i].count(computador) # Conta 'O' em cada linha
-        qtd_disp = matriz[i].count('-') # Conta espaços vazios
+        while dificuldade not in ['1','2','3']:
+            print('Escolha inválida. Tente novamente.')
+            dificuldade = input('Selecione o nível de dificuldade: 1 - Fácil | 2 - Médio | 3 - Difícil')
+        self.dificuldade = dificuldade
+
+        if dificuldade == '1':
+            return 0.2
+        elif dificuldade == '2':
+            return 0.1
+        elif dificuldade == '3':
+            return 0
         
-        if qtd_computador == 2 and qtd_disp == 1: # Se há O O e um espaço disponível, joga neste espaço
-            valor_disp_linha = [v for v in valores_disponiveis if v[0] == i and matriz[v[0]][v[1]] == '-']
-            # print('valor_disp_linha[0]')
-            return valor_disp_linha[0]
-    
-    # Se o computador tiver dois valores em uma coluna
-    for j in range(3):
-        coluna = [linha[j] for linha in matriz]
-        qtd_computador = coluna.count(computador) # Conta O na coluna
-        qtd_disp = coluna.count('-') # Conta espaços vazios
-        # print(f'COLUNA {j} - qtd_computador: {qtd_computador}, qtd_disp: {qtd_disp}')     
-        if qtd_computador == 2 and qtd_disp == 1:
-            valor_disp_col = [v for v in valores_disponiveis if v[1] == j and matriz[v[0]][v[1]] == '-']
-            if valor_disp_col:
-                # print('valor_disp_col[0]')
-                return valor_disp_col[0]
-                
+    def resetar_jogo(self):
+        self.tabuleiro = [["-", "-", "-"] for _ in range(3)]
+        self.jogadas_disponiveis = [(i, j) for i in range(3) for j in range(3)]
 
-    # Se o computador tiver dois valores na diagonal
-    # Principal
-    diag_princ_list = [matriz[0][0], matriz[1][1], matriz[2][2]]
-    qtd_computador_diag_princ = diag_princ_list.count(computador)
-    qtd_disp_diag_princ = diag_princ_list.count('-')
+    def verificar_vencedor(self, simbolo):
+        # Verifica linhas, colunas e diagonais
+        for i in range(3):
+            if all(self.tabuleiro[i][j] == simbolo for j in range(3)):  # Linha
+                return True
+            if all(self.tabuleiro[j][i] == simbolo for j in range(3)):  # Coluna
+                return True
+        if all(self.tabuleiro[i][i] == simbolo for i in range(3)):  # Diagonal principal
+            return True
+        if all(self.tabuleiro[i][2 - i] == simbolo for i in range(3)):  # Diagonal secundária
+            return True
+        return False
 
-    if qtd_computador_diag_princ == 2 and qtd_disp_diag_princ == 1:
-        for k in range(3):
-            if matriz[k][k] == '-':
-                # print('(k,k)')
-                return (k,k)
+    def verificar_empate(self):
+        return not self.jogadas_disponiveis
 
-    # Secundária
-    diag_sec_list = [matriz[0][2], matriz[1][1], matriz[2][0]]
-    qtd_computador_diag_sec = diag_sec_list.count(computador)
-    qtd_disp_diag_sec = diag_sec_list.count('-')
-    if qtd_computador_diag_sec == 2 and qtd_disp_diag_sec == 1:
-        for k in range(3):
-                    if matriz[k][2 - k] == '-':
-                        # print('(k, 2-k)')
-                        return (k, 2 - k)
+    def atualizar_pontuacao(self, vencedor):
+        if vencedor == "jogador":
+            self.pontos_jogador += 1
+        elif vencedor == "computador":
+            self.pontos_computador += 1
+
+    def exibir_pontuacao(self):
+        print("\nPontuação:")
+        print(f"Jogador: {self.pontos_jogador}")
+        print(f"Computador: {self.pontos_computador}")
 
 
-    # 2. Para evitar perda =====================================================
-    # Se o usuario tiver dois valores em uma linha
-    for i in range(3):
-        qtd_jogador = matriz[i].count(jogador)
-        qtd_disp = matriz[i].count('-')
-        if qtd_jogador == 2 and qtd_disp == 1:
-            valor_disp_linha = [v for v in valores_disponiveis if v[0] == i and matriz[v[0]][v[1]] == '-']
-            # print('valor_disp_linha[0] computador')
-            return valor_disp_linha[0]
-    
-    # Se o usuario tiver dois valores em uma coluna
-    for j in range(3):
-        coluna = [linha[j] for linha in matriz]
-        qtd_jogador = coluna.count(jogador)
-        qtd_disp = coluna.count('-')
-        # print(f'COLUNA {j} - qtd_jogador: {qtd_jogador}, qtd_disp: {qtd_disp}')   
+# Classe do jogador
+class Usuario:
+    def __init__(self):
+        self.simbolo = ""
 
-        if qtd_jogador == 2 and qtd_disp == 1:
-            valor_disp_col = [v for v in valores_disponiveis if v[1] == j and matriz[v[0]][v[1]] == '-']
-            # print('valor_disp_col[0] computador')
-            return valor_disp_col[0]
+    def escolher_simbolo(self):
+        simbolo = input("Você deseja ser X ou O? ").upper()
+        while simbolo not in ["X", "O"]:
+            print("Escolha inválida. Tente novamente.")
+            simbolo = input("Você deseja ser X ou O? ").upper()
+        self.simbolo = simbolo
+        return self.simbolo
 
-    # Se o usuario tiver dois valores na diagonal
-    # Principal
-    diag_princ_list = [matriz[0][0], matriz[1][1], matriz[2][2]]
-    qtd_jogador_diag_princ = diag_princ_list.count(jogador)
-    qtd_disp_diag_princ = diag_princ_list.count('-')
-    if qtd_jogador_diag_princ == 2 and qtd_disp_diag_princ == 1:
-        for k in range(3):
-            if matriz[k][k] == '-':
-                # print('(k,k) computador')
-                return (k,k)
-    
-    # Secundária
-    diag_sec_list = [matriz[0][2], matriz[1][1], matriz[2][0]]
-    qtd_jogador_diag_sec = diag_sec_list.count(jogador)
-    qtd_disp_diag_sec = diag_sec_list.count('-')
-    if qtd_jogador_diag_sec == 2 and qtd_disp_diag_sec == 1:
-        for k in range(3):
-                    if matriz[k][2 - k] == '-':
-                        # print('(k, 2-k) computador')
-                        return (k, 2 - k)
-    
-    # 3. Primeira jogada
-    cantos = [(0,0),(0,2), (2,0), (2,2)]
-    cantos_disponiveis = [v for v in cantos if v in valores_disponiveis]
-    if cantos_disponiveis:
-        # print('random.choice(cantos_disponiveis)')
-        return random.choice(cantos_disponiveis)
-    elif valores_disponiveis:
-        # print('random.choice(valores_disponiveis)')
-        return random.choice(valores_disponiveis)
-    
-# Matriz
-matriz = [
-    ['-', '-', '-'],
-    ['-', '-', '-'],
-    ['-', '-', '-']
-]
-valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-
-# Status
-status = True
-
-again = 1
-print('\n=================================')
-print('Seja bem vindo ao Jogo da Velha!')
-print('=================================\n')
-
-# Definir qual simbolo
-jogador = input('Você deseja ser X ou O? (X/O)')
-# Opção inválida, Default 'X
-if jogador not in ['X', 'O', 'x', 'o']:
-    print('\nOpção inválida. Você será o X e o computador será o O.')
-    jogador = 'X'
-    computador = 'O'
-else:
-    if jogador == 'X' or jogador == 'x':
-        jogador = jogador.upper()
-        computador = 'O'
-    else:
-        jogador = jogador.upper()
-        computador = 'X'
+    def realizar_jogada(self, jogadas_disponiveis):
+        while True:
+            try:
+                linha = int(input("Digite a linha (0-2): "))
+                coluna = int(input("Digite a coluna (0-2): "))
+                if (linha, coluna) in jogadas_disponiveis:
+                    return linha, coluna
+                else:
+                    print("Jogada inválida. Tente novamente.")
+            except ValueError:
+                print("Entrada inválida. Digite números entre 0 e 2.")
 
 
-# Definir o nivel de dificuldade
-dificuldade = int(input('Selecione o nível de dificuldade: 1 - Fácil | 2 - Médio | 3 - Difícil'))
-if dificuldade == 1:
-    fator_aleatoriedade = 0.25
-elif dificuldade == 2:
-    fator_aleatoriedade = 0.15
-elif dificuldade == 3:
-    fator_aleatoriedade = 0.005
-else:
-    print('Opção inválida. Você jogará à dificuldade fácil.')
-    fator_aleatoriedade = 0.5
+class Computador:
+    def __init__(self, simbolo, jogo):
+        self.simbolo = simbolo
+        self.jogo = jogo  # Referência à instância de JogoDaVelha
 
-print('\nTabuleiro:\n')
-for linha in matriz:
-        print(" ".join(f"{x:3}" for x in linha))
+    def realizar_jogada(self, jogadas_disponiveis, fator_aleatoriedade, tabuleiro, simbolo_oponente):
+        # Joga aleatoriamente se dentro do fator de aleatoriedade
+        if random.random() <= fator_aleatoriedade:
+            return random.choice(jogadas_disponiveis)
 
-# Roda o loop ================================================================
-while again == 1:
+        # Tenta encontrar uma jogada vencedora
+        for jogada in jogadas_disponiveis:
+            linha, coluna = jogada
+            tabuleiro[linha][coluna] = self.simbolo  # Simula a jogada do computador
+            if self.jogo.verificar_vencedor(self.simbolo):  # Verifica vitória
+                tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+                return jogada
+            tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
 
-    # Jogada usuário
-    linha_jogada = int(input('\nDigite qual linha vc quer jogar (0-2)'))
-    coluna_jogada = int(input('Digite qual coluna vc quer jogar (0-2)'))
-    jogada_usuario = (linha_jogada, coluna_jogada)
+        # Tenta bloquear o jogador
+        for jogada in jogadas_disponiveis:
+            linha, coluna = jogada
+            tabuleiro[linha][coluna] = simbolo_oponente  # Simula a jogada do oponente
+            if self.jogo.verificar_vencedor(simbolo_oponente):  # Verifica se jogador pode vencer
+                tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
+                return jogada
+            tabuleiro[linha][coluna] = "-"  # Desfaz a simulação
 
-    if jogada_usuario in valores_disponiveis:
-        matriz[linha_jogada][coluna_jogada] = jogador
-        print('\nSua jogada:\n')
-        for linha in matriz:
-            print(" ".join(f"{x:3}" for x in linha))
+        # Caso nenhuma jogada estratégica seja encontrada, escolhe aleatoriamente
+        return random.choice(jogadas_disponiveis)
 
-        valores_disponiveis.remove(jogada_usuario)
-    else: 
-        print('Essa jogada não pode ser feita. Tente novamente')
-        linha_jogada = int(input('\nDigite qual linha vc quer jogar (0-2)'))
-        coluna_jogada = int(input('Digite qual coluna vc quer jogar (0-2)'))
-        jogada_usuario = (linha_jogada, coluna_jogada)
-        if jogada_usuario in valores_disponiveis:
-            matriz[linha_jogada][coluna_jogada] = jogador
-            print('\nSua jogada:\n')
-            for linha in matriz:
-                print(" ".join(f"{x:3}" for x in linha))
 
-            valores_disponiveis.remove(jogada_usuario)
-        else:
-            print('Essa jogada não pode ser feita. Saindo do jogo.')
+# Função principal
+def main():
+    jogo = JogoDaVelha(fator_aleatoriedade=0.1)
+    jogador = Usuario()
+    jogador_simbolo = jogador.escolher_simbolo()
+    computador = Computador("O" if jogador_simbolo == "X" else "X", jogo)  # Passa a instância
+    fator_aleatoriedade = jogo.determinar_aleatoriedade()
+    jogo.fator_aleatoriedade = fator_aleatoriedade
+    print(f"Fator de aleatoriedade configurado: {fator_aleatoriedade}")
+
+    while True:
+        jogo.resetar_jogo()
+        print("\nNovo Jogo!")
+        jogo.exibir_tabuleiro()
+
+        while True:
+            # Jogada do jogador
+            print("\nSua vez:")
+            linha, coluna = jogador.realizar_jogada(jogo.jogadas_disponiveis)
+            jogo.tabuleiro[linha][coluna] = jogador.simbolo
+            jogo.jogadas_disponiveis.remove((linha, coluna))
+            jogo.exibir_tabuleiro()
+
+            if jogo.verificar_vencedor(jogador.simbolo):
+                print("\nParabéns, você venceu!")
+                jogo.atualizar_pontuacao("jogador")
+                break
+            if jogo.verificar_empate():
+                print("\nEmpate!")
+                break
+
+            # Jogada do computador
+            print("\nVez do computador:")
+            linha, coluna = computador.realizar_jogada(
+                jogo.jogadas_disponiveis,
+                jogo.fator_aleatoriedade,
+                jogo.tabuleiro,
+                jogador.simbolo,
+            )
+            jogo.tabuleiro[linha][coluna] = computador.simbolo
+            jogo.jogadas_disponiveis.remove((linha, coluna))
+            jogo.exibir_tabuleiro()
+
+            if jogo.verificar_vencedor(computador.simbolo):
+                print("\nVocê perdeu!")
+                jogo.atualizar_pontuacao("computador")
+                break
+            if jogo.verificar_empate():
+                print("\nEmpate!")
+                break
+
+        jogo.exibir_pontuacao()
+        jogar_novamente = input("Deseja jogar novamente? (s/n): ").lower()
+        if jogar_novamente != "s":
+            print("Obrigado por jogar!")
             break
-    
-    # Jogada computador
-    if random.random() <= fator_aleatoriedade: # Gera um número entre 0 e 1
-        jogada_computador = random.choice(valores_disponiveis)
-    else:
-        jogada_computador = ComputerAlgorithm(jogador, computador)
 
-    if valores_disponiveis:
-        matriz[jogada_computador[0]][jogada_computador[1]] = computador
-        valores_disponiveis.remove(jogada_computador)
-        print('\nJogada do computador:\n')
-    
-        for linha in matriz:
-            print(" ".join(f"{x:3}" for x in linha))
-    
-
-    # Usuário vence ======================================================================
-    # Linhas
-    for i in range(3):
-        if (matriz[i][0] == jogador and matriz[i][1] == jogador and matriz[i][2] == jogador):
-            print('\nVocê venceu!')
-            pontuacao_jogador += 1
-            # Printa a pontuação
-            print('\nPontuação:')
-            print(f'- Você: {pontuacao_jogador}')
-            print(f'- Computador: {pontuacao_computador}')
-
-            jogar_novamente = input('Deseja jogar novamente? (s/n)')
-            if jogar_novamente == 's':
-                matriz, valores_disponiveis = JogarNovamente()
-                continue
-            elif jogar_novamente == 'n':
-                again = 0
-                break       
-
-    # Colunas
-    for j in range(3):
-        if matriz[0][j] == jogador and matriz[1][j] == jogador and matriz[2][j] == jogador:
-            print('\nVocê venceu!')
-            pontuacao_jogador += 1
-            # Printa a pontuação
-            print('\nPontuação:')
-            print(f'- Você: {pontuacao_jogador}')
-            print(f'- Computador: {pontuacao_computador}')
-            # valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-
-            jogar_novamente = input('Deseja jogar novamente? (s/n)')
-            if jogar_novamente == 's':
-                matriz, valores_disponiveis = JogarNovamente()
-                continue
-            elif jogar_novamente == 'n':
-                again = 0
-                break   
-
-    # Diagonais
-    if (matriz[0][0] == jogador and matriz[1][1] == jogador and matriz[2][2] == jogador) or (matriz[0][2] == jogador and matriz[1][1] == jogador and matriz[2][0] == jogador):
-        print('\nVocê venceu!')
-        pontuacao_jogador += 1
-        # Printa a pontuação
-        print('\nPontuação:')
-        print(f'- Você: {pontuacao_jogador}')
-        print(f'- Computador: {pontuacao_computador}')
-        # valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-
-        jogar_novamente = input('Deseja jogar novamente? (s/n)')
-        if jogar_novamente == 's':
-            matriz, valores_disponiveis = JogarNovamente()
-            continue
-        elif jogar_novamente == 'n':
-            again = 0
-            break   
-
-    # Computador vence ======================================================================
-    # Linhas
-    for i in range(3):
-        if matriz[i][0] == computador and matriz[i][1] == computador and matriz[i][2] == computador:
-            print('\nVocê perdeu!')
-            # valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-            pontuacao_computador += 1
-
-            # Printa a pontuação
-            print('\nPontuação:')
-            print(f'- Você: {pontuacao_jogador}')
-            print(f'- Computador: {pontuacao_computador}')
-
-            jogar_novamente = input('Deseja jogar novamente? (s/n)')
-            if jogar_novamente == 's':
-                matriz, valores_disponiveis = JogarNovamente()
-                continue
-            elif jogar_novamente == 'n':
-                again = 0
-                break   
-
-    # Colunas
-    for j in range(3):
-        if matriz[0][j] == computador and matriz[1][j] == computador and matriz[2][j] == computador:
-            print('\nVocê perdeu!')
-            pontuacao_computador += 1
-
-            # Printa a pontuação
-            print('\nPontuação:')
-            print(f'- Você: {pontuacao_jogador}')
-            print(f'- Computador: {pontuacao_computador}')
-
-            jogar_novamente = input('Deseja jogar novamente? (s/n)')
-            if jogar_novamente == 's':
-                matriz, valores_disponiveis = JogarNovamente()
-                continue
-            elif jogar_novamente == 'n':
-                again = 0
-                break   
-
-    # Diagonais
-    if (matriz[0][0] == computador and matriz[1][1] == computador and matriz[2][2] == computador) or (matriz[0][2] == computador and matriz[1][1] == computador and matriz[2][0] == computador):
-        print('\nVocê perdeu!')
-        pontuacao_computador += 1
-        # Printa a pontuação
-        print('\nPontuação:')
-        print(f'- Você: {pontuacao_jogador}')
-        print(f'- Computador: {pontuacao_computador}')
-        # valores_disponiveis = [(0,0),(0,1),(0,2),(1,0),(1,1),(1,2),(2,0),(2,1),(2,2)]
-
-        jogar_novamente = input('Deseja jogar novamente? (s/n)')
-        if jogar_novamente == 's':
-            matriz, valores_disponiveis = JogarNovamente()
-            continue
-        elif jogar_novamente == 'n':
-            again = 0
-            break   
-
-    # Empate ===================================================================================
-    if not valores_disponiveis:
-        print('\nEmpate!')
-        # Printa a pontuação
-        print('\nPontuação:')
-        print(f'- Você: {pontuacao_jogador}')
-        print(f'- Computador: {pontuacao_computador}')
-
-        jogar_novamente = input('Deseja jogar novamente? (s/n)')
-        if jogar_novamente == 's':
-            matriz, valores_disponiveis = JogarNovamente()
-            continue
-        elif jogar_novamente == 'n':
-            again = 0
-            break   
+if __name__ == "__main__":
+    main()
