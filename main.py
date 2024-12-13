@@ -2,6 +2,7 @@
 # py main.py
 
 import random
+import time
 
 # Classe JogoDaVelha
 class JogoDaVelha:
@@ -179,6 +180,7 @@ def main():
 
         while True:
             # Jogada do jogador
+            time.sleep(1)
             print("\nSua vez:")
             linha, coluna = jogador.realizar_jogada(jogo.jogadas_disponiveis)
             jogo.tabuleiro[linha][coluna] = jogador.simbolo
@@ -194,7 +196,9 @@ def main():
                 break
 
             # Jogada do computador
+            time.sleep(1)
             print("\nVez do computador:")
+            time.sleep(1)
             linha, coluna = computador.realizar_jogada(
                 jogo.jogadas_disponiveis,
                 jogo.fator_aleatoriedade,
